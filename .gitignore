@@ -1,0 +1,12 @@
+# Secret Environment Files (NEVER push these to GitHub)
+backend/.env
+frontend/.env.local
+
+# Heavy Dependency Folders (Auto-generated)
+frontend/node_modules/
+frontend/.next/
+
+# Python Cache Folders
+**/__pycache__/
+*.pyc
+.pytest_cache/

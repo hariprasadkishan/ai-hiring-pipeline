@@ -1,0 +1,112 @@
+/* Page Layout */
+.create-opening-container {
+  min-height: 100vh;
+  background-color: var(--slate-950);
+  color: var(--slate-50);
+  padding: 2rem 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.opening-card {
+  width: 100%;
+  max-width: 42rem;
+  background-color: var(--slate-900);
+  border: 1px solid var(--slate-800);
+  border-radius: var(--radius-xl);
+  padding: 2rem;
+  box-shadow: var(--shadow-card);
+  box-sizing: border-box;
+}
+
+.opening-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 1.5rem 0;
+  letter-spacing: -0.025em;
+}
+
+/* Form Grid & Controls */
+.opening-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 640px) {
+  .form-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group-dark {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-label-dark {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--slate-300);
+}
+
+.form-input-dark,
+.form-select-dark {
+  width: 100%;
+  background-color: var(--slate-950);
+  border: 1px solid var(--slate-700);
+  border-radius: var(--radius-lg);
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  color: #ffffff;
+  outline: none;
+  box-sizing: border-box;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.form-input-dark:focus,
+.form-select-dark:focus {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+/* Date Window Highlight Box */
+.date-window-box {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  background-color: rgba(2, 6, 23, 0.5);
+  padding: 1rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(51, 65, 85, 0.5);
+}
+
+@media (max-width: 640px) {
+  .date-window-box {
+    grid-template-columns: 1fr;
+  }
+}
+
+.label-start-date {
+  color: var(--primary-500);
+}
+
+.label-end-date {
+  color: var(--error-600);
+}
+
+.publish-btn {
+  width: 100%;
+  margin-top: 1rem;
+}
