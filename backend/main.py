@@ -1,9 +1,11 @@
 import os
 import datetime
+import cloudinary
+import cloudinary.uploader
 from typing import List, Optional
 import jwt
 from dotenv import load_dotenv
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
@@ -19,6 +21,15 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback_secret")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 1440))
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB Limit
+
+# Cloudinary Setup
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME", "your_cloud_name"),
+    api_key=os.getenv("CLOUDINARY_API_KEY", "your_api_key"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET", "your_api_secret"),
+    secure=True
+)
 
 # Passlib & Security Setup
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -75,6 +86,9 @@ class OpeningCreateSchema(BaseModel):
     title: str
     program_type: str  # 'MTech' or 'PhD'
     department: str
+    description: Optional[str] = None
+    research_areas: Optional[List[str]] = []
+    preferred_skills: Optional[List[str]] = []
     min_gpa: float = Field(gt=0, le=10.0)
     min_gate_score: Optional[float] = None
     prerequisites: List[str]
@@ -187,7 +201,7 @@ def login(credentials: LoginSchema, db: Session = Depends(get_db)):
         "user_id": user.user_id
     }
 
-# Opening Endpoints
+# Admission Opening Endpoints (Faculty)
 @app.post("/api/openings", status_code=status.HTTP_201_CREATED, tags=["Admission Openings"])
 def create_opening(
     payload: OpeningCreateSchema, 
@@ -207,6 +221,9 @@ def create_opening(
         title=payload.title,
         program_type=payload.program_type,
         department=payload.department,
+        description=payload.description,
+        research_areas=payload.research_areas,
+        preferred_skills=payload.preferred_skills,
         min_gpa=payload.min_gpa,
         min_gate_score=payload.min_gate_score,
         prerequisites=payload.prerequisites,
@@ -225,15 +242,26 @@ def get_teacher_openings(
     current_user: dict = Depends(get_current_user_data)
 ):
     if current_user["role"] != "teacher":
-        raise HTTPException(status_code=403, detail="Access denied.")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="Access denied. Only faculty can view this dashboard."
+        )
 
     user_id = current_user["user_id"]
     teacher = db.query(models.TeacherProfile).filter(models.TeacherProfile.user_id == user_id).first()
     if not teacher:
-        raise HTTPException(status_code=403, detail="Access denied")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Faculty profile record not found."
+        )
 
-    openings = db.query(models.AdmissionOpening).filter(models.AdmissionOpening.teacher_id == teacher.teacher_id).all()
-    
+    openings = (
+        db.query(models.AdmissionOpening)
+        .filter(models.AdmissionOpening.teacher_id == teacher.teacher_id)
+        .order_by(models.AdmissionOpening.created_at.desc())
+        .all()
+    )
+
     result = []
     for op in openings:
         result.append({
@@ -241,13 +269,155 @@ def get_teacher_openings(
             "title": op.title,
             "program_type": op.program_type,
             "department": op.department,
+            "description": op.description,
+            "research_areas": op.research_areas or [],
+            "preferred_skills": op.preferred_skills or [],
             "min_gpa": op.min_gpa,
             "min_gate_score": op.min_gate_score,
+            "prerequisites": op.prerequisites or [],
+            "syllabus_topics": op.syllabus_topics or [],
             "start_date": op.start_date.isoformat(),
             "end_date": op.end_date.isoformat(),
             "status": compute_opening_status(op.start_date, op.end_date)
         })
+
     return result
+
+# Student Endpoints
+@app.get("/api/openings/student", tags=["Student Openings"])
+def get_student_openings(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user_data)
+):
+    if current_user["role"] != "student":
+        raise HTTPException(status_code=403, detail="Access denied. Only students can view these openings.")
+
+    user_id = current_user["user_id"]
+    student = db.query(models.StudentProfile).filter(models.StudentProfile.user_id == user_id).first()
+    if not student:
+        raise HTTPException(status_code=403, detail="Student profile missing.")
+
+    openings = db.query(models.AdmissionOpening).order_by(models.AdmissionOpening.created_at.desc()).all()
+
+    applied_opening_ids = set(
+        app_item.opening_id
+        for app_item in db.query(models.Application.opening_id).filter(models.Application.student_id == student.student_id).all()
+    )
+
+    result = []
+    for op in openings:
+        op_status = compute_opening_status(op.start_date, op.end_date)
+        result.append({
+            "opening_id": op.opening_id,
+            "title": op.title,
+            "program_type": op.program_type,
+            "department": op.department,
+            "description": op.description,
+            "research_areas": op.research_areas or [],
+            "preferred_skills": op.preferred_skills or [],
+            "min_gpa": op.min_gpa,
+            "min_gate_score": op.min_gate_score,
+            "prerequisites": op.prerequisites or [],
+            "syllabus_topics": op.syllabus_topics or [],
+            "start_date": op.start_date.isoformat(),
+            "end_date": op.end_date.isoformat(),
+            "status": op_status,
+            "has_applied": op.opening_id in applied_opening_ids
+        })
+
+    return result
+
+@app.post("/api/applications/apply", status_code=status.HTTP_201_CREATED, tags=["Student Applications"])
+async def apply_for_opening(
+    opening_id: str = Form(...),
+    gpa: float = Form(...),
+    gate_score: Optional[float] = Form(None),
+    resume: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user_data)
+):
+    if current_user["role"] != "student":
+        raise HTTPException(status_code=403, detail="Access denied. Only students can apply.")
+
+    user_id = current_user["user_id"]
+    student = db.query(models.StudentProfile).filter(models.StudentProfile.user_id == user_id).first()
+    if not student:
+        raise HTTPException(status_code=403, detail="Student profile missing.")
+
+    opening = db.query(models.AdmissionOpening).filter(models.AdmissionOpening.opening_id == opening_id).first()
+    if not opening:
+        raise HTTPException(status_code=404, detail="Opening not found.")
+
+    # Check opening status window
+    op_status = compute_opening_status(opening.start_date, opening.end_date)
+    if op_status != "ACTIVE":
+        raise HTTPException(status_code=400, detail=f"Cannot apply. Opening window is {op_status.lower()}.")
+
+    # Prevent duplicate application
+    existing_app = db.query(models.Application).filter(
+        models.Application.student_id == student.student_id,
+        models.Application.opening_id == opening_id
+    ).first()
+    if existing_app:
+        raise HTTPException(status_code=400, detail="You have already applied for this opening.")
+
+    # Validate academic thresholds
+    if gpa < opening.min_gpa:
+        raise HTTPException(status_code=400, detail=f"Your GPA ({gpa}) is below the minimum ({opening.min_gpa}).")
+
+    if opening.min_gate_score and (gate_score is None or gate_score < opening.min_gate_score):
+        raise HTTPException(status_code=400, detail=f"Minimum GATE score of {opening.min_gate_score} is required.")
+
+    # Conditional Resume Validation for Ph.D.
+    resume_url = None
+    if opening.program_type == "PhD":
+        if not resume or not resume.filename:
+            raise HTTPException(status_code=400, detail="Ph.D. applications require a resume PDF upload.")
+
+    # Upload PDF file to Cloudinary if provided
+    if resume and resume.filename:
+        if resume.content_type != "application/pdf" or not resume.filename.lower().endswith(".pdf"):
+            raise HTTPException(status_code=400, detail="Resume must be in a valid PDF format.")
+
+        try:
+            resume.file.seek(0, 2)
+            file_size = resume.file.tell()
+            resume.file.seek(0)
+            
+            if file_size > MAX_FILE_SIZE:
+                raise HTTPException(status_code=400, detail="Resume file size must be less than 5MB.")
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid file payload.")
+
+        try:
+            upload_result = cloudinary.uploader.upload(
+                resume.file,
+                resource_type="image",
+                folder="phd_resumes",
+                public_id=f"resume_{student.student_id}_{opening_id}"
+            )
+            resume_url = upload_result.get("secure_url")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to upload resume: {str(e)}")
+
+    # Save Application
+    new_application = models.Application(
+        student_id=student.student_id,
+        opening_id=opening_id,
+        gpa=gpa,
+        gate_score=gate_score,
+        resume_url=resume_url,
+        status="APPLIED"
+    )
+    db.add(new_application)
+    db.commit()
+    db.refresh(new_application)
+
+    return {
+        "message": "Application submitted successfully", 
+        "application_id": new_application.application_id,
+        "resume_url": resume_url
+    }
 
 if __name__ == "__main__":
     import uvicorn

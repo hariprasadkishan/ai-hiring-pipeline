@@ -110,3 +110,376 @@
   width: 100%;
   margin-top: 1rem;
 }
+/* ==========================================================================
+   TEACHER OPENING & DASHBOARD MODULE
+   ========================================================================== */
+
+/* Page Container & Layout */
+.dashboard-container {
+  min-height: 100vh;
+  background-color: var(--slate-950);
+  color: var(--slate-50);
+  padding: 2.5rem 2rem;
+  max-width: 80rem;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.dashboard-title {
+  font-size: 1.875rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+
+.dashboard-subtitle {
+  font-size: 0.875rem;
+  color: var(--slate-500);
+  margin-top: 0.25rem;
+  margin-bottom: 0;
+}
+
+/* Metric KPI Cards */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background-color: var(--slate-900);
+  border: 1px solid var(--slate-800);
+  padding: 1.25rem;
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--slate-500);
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.text-success {
+  color: #34d399;
+}
+.text-warning {
+  color: #fbbf24;
+}
+.text-muted-val {
+  color: var(--slate-500);
+}
+
+/* States: Loading & Empty */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5rem 1rem;
+  color: var(--slate-500);
+  gap: 1rem;
+}
+
+.spinner-large {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid var(--slate-800);
+  border-top-color: var(--primary-500);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background-color: var(--slate-900);
+  border: 1px dashed var(--slate-800);
+  border-radius: var(--radius-xl);
+}
+
+.empty-state h3 {
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+}
+
+.empty-state p {
+  color: var(--slate-500);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* Openings Grid & Cards */
+.openings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.opening-card-dash {
+  background-color: var(--slate-900);
+  border: 1px solid var(--slate-800);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  transition:
+    transform var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.opening-card-dash:hover {
+  transform: translateY(-2px);
+  border-color: var(--slate-700);
+}
+
+.opening-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+/* Badge System */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.badge-degree.mtech {
+  background-color: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.badge-degree.phd {
+  background-color: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.badge-status.status-active {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-status.status-upcoming {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-status.status-closed {
+  background-color: rgba(100, 116, 139, 0.15);
+  color: var(--slate-500);
+  border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+/* Card Content */
+.opening-card-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 0.25rem 0;
+  line-height: 1.4;
+}
+
+.opening-card-dept {
+  font-size: 0.8rem;
+  color: var(--slate-500);
+  margin: 0 0 1.25rem 0;
+}
+
+.opening-details {
+  display: flex;
+  gap: 1.25rem;
+  background-color: var(--slate-950);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--slate-800);
+  margin-bottom: 1.25rem;
+}
+
+.detail-item {
+  font-size: 0.75rem;
+  color: var(--slate-300);
+}
+
+.detail-item span {
+  color: var(--slate-500);
+  margin-right: 0.25rem;
+}
+
+/* Card Footer & Action Links */
+.opening-card-footer {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid var(--slate-800);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.date-group {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.7rem;
+  color: var(--slate-500);
+  gap: 0.125rem;
+}
+
+.btn-link {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--primary-500);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.btn-link:hover {
+  color: var(--primary-600);
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   CREATE OPENING FORM SPECIFIC STYLES
+   ========================================================================== */
+
+.create-opening-container {
+  min-height: 100vh;
+  background-color: var(--slate-950);
+  color: var(--slate-50);
+  padding: 2rem 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.opening-card {
+  width: 100%;
+  max-width: 42rem;
+  background-color: var(--slate-900);
+  border: 1px solid var(--slate-800);
+  border-radius: var(--radius-xl);
+  padding: 2rem;
+  box-shadow: var(--shadow-card);
+  box-sizing: border-box;
+}
+
+.opening-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 1.5rem 0;
+  letter-spacing: -0.025em;
+}
+
+.opening-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 640px) {
+  .form-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group-dark {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-label-dark {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--slate-300);
+}
+
+.form-input-dark,
+.form-select-dark {
+  width: 100%;
+  background-color: var(--slate-950);
+  border: 1px solid var(--slate-700);
+  border-radius: var(--radius-lg);
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  color: #ffffff;
+  outline: none;
+  box-sizing: border-box;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.form-input-dark:focus,
+.form-select-dark:focus {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.date-window-box {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  background-color: rgba(2, 6, 23, 0.5);
+  padding: 1rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(51, 65, 85, 0.5);
+}
+
+@media (max-width: 640px) {
+  .date-window-box {
+    grid-template-columns: 1fr;
+  }
+}
+
+.label-start-date {
+  color: var(--primary-500);
+}
+.label-end-date {
+  color: var(--error-600);
+}
+.publish-btn {
+  width: 100%;
+  margin-top: 1rem;
+}

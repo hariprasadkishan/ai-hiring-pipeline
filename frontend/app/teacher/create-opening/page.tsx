@@ -14,6 +14,13 @@ export default function CreateOpeningPage() {
   const [department, setDepartment] = useState(
     "Computer Science & Engineering",
   );
+
+  // Job Description / Research Fields
+  const [description, setDescription] = useState("");
+  const [researchAreas, setResearchAreas] = useState("");
+  const [preferredSkills, setPreferredSkills] = useState("");
+
+  // Academic Thresholds & Coursework
   const [minGpa, setMinGpa] = useState("7.5");
   const [minGate, setMinGate] = useState("650");
   const [prerequisites, setPrerequisites] = useState(
@@ -23,6 +30,7 @@ export default function CreateOpeningPage() {
     "Distributed Systems, Computer Networks, Machine Learning",
   );
 
+  // Application Window
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
@@ -44,6 +52,15 @@ export default function CreateOpeningPage() {
       title,
       program_type: programType,
       department,
+      description: description.trim() !== "" ? description.trim() : null,
+      research_areas: researchAreas
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      preferred_skills: preferredSkills
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
       min_gpa: parseFloat(minGpa),
       min_gate_score: minGate.trim() !== "" ? parseFloat(minGate) : null,
       prerequisites: prerequisites
@@ -105,7 +122,7 @@ export default function CreateOpeningPage() {
               type="text"
               required
               className="form-input-dark"
-              placeholder="M.Tech AI & Data Science Admissions 2026"
+              placeholder="e.g., Ph.D. Admissions in Vision AI / M.Tech AI 2026"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
@@ -135,6 +152,71 @@ export default function CreateOpeningPage() {
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
               />
+            </div>
+          </div>
+
+          {/* Expanded Job Description / Research Requirements Section */}
+          <div
+            style={{
+              padding: "1rem",
+              borderRadius: "8px",
+              backgroundColor: "rgba(15, 23, 42, 0.5)",
+              border: "1px solid #334155",
+            }}
+          >
+            <h3
+              style={{
+                fontSize: "0.95rem",
+                color: "#60a5fa",
+                marginBottom: "0.75rem",
+              }}
+            >
+              Job & Research Description{" "}
+              {programType === "MTech"
+                ? "(Optional)"
+                : "(Recommended for Ph.D.)"}
+            </h3>
+
+            <div className="form-group-dark" style={{ marginBottom: "1rem" }}>
+              <label className="form-label-dark">
+                Project / Lab Description
+              </label>
+              <textarea
+                className="form-input-dark"
+                rows={3}
+                placeholder="Briefly describe the research lab, funded project scope, or candidate expectations..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                style={{ resize: "vertical" }}
+              />
+            </div>
+
+            <div className="form-grid-2">
+              <div className="form-group-dark">
+                <label className="form-label-dark">
+                  Research Areas (Comma Separated)
+                </label>
+                <input
+                  type="text"
+                  className="form-input-dark"
+                  placeholder="e.g., Computer Vision, LLMs, Federated Learning"
+                  value={researchAreas}
+                  onChange={(e) => setResearchAreas(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group-dark">
+                <label className="form-label-dark">
+                  Preferred Skills / Tech Stack (Comma Separated)
+                </label>
+                <input
+                  type="text"
+                  className="form-input-dark"
+                  placeholder="e.g., PyTorch, CUDA, ROS2, Docker"
+                  value={preferredSkills}
+                  onChange={(e) => setPreferredSkills(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 

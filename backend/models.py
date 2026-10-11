@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Enum, TIMESTAMP, ForeignKey, JSON, Float, text
+from sqlalchemy import Column, String, Enum, TIMESTAMP, ForeignKey, JSON, Float, text,Text
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -42,12 +42,43 @@ class AdmissionOpening(Base):
     program_type = Column(Enum("MTech", "PhD", name="program_types"), nullable=False)
     title = Column(String(150), nullable=False)
     department = Column(String(100), nullable=False)
+    
+    # --- New JD / Research Fields ---
+    description = Column(Text, nullable=True)             # Overview of research lab / project scope
+    research_areas = Column(JSON, nullable=True)         # Target research domains e.g., ["NLP", "Computer Vision"]
+    preferred_skills = Column(JSON, nullable=True)        # Nice-to-have tools e.g., ["PyTorch", "Docker"]
+
+    # Academic Thresholds & Coursework
     min_gpa = Column(Float, nullable=False, default=6.0)
     min_gate_score = Column(Float, nullable=True)
     prerequisites = Column(JSON, nullable=False)
     syllabus_topics = Column(JSON, nullable=False)
+    
+    # Opening Date Window
     start_date = Column(TIMESTAMP, nullable=False)
     end_date = Column(TIMESTAMP, nullable=False)
     created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
 
     teacher = relationship("TeacherProfile")
+
+
+# Add this class to models.py
+
+class Application(Base):
+    __tablename__ = "applications"
+
+    application_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    student_id = Column(String(36), ForeignKey("student_profiles.student_id", ondelete="CASCADE"), nullable=False)
+    opening_id = Column(String(36), ForeignKey("admission_openings.opening_id", ondelete="CASCADE"), nullable=False)
+    gpa = Column(Float, nullable=False)
+    gate_score = Column(Float, nullable=True)
+    resume_url = Column(String(500), nullable=True)
+    status = Column(
+        Enum("APPLIED", "INTERVIEW_PENDING", "ACCEPTED", "REJECTED", name="application_status"),
+        default="APPLIED",
+        nullable=False
+    )
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+
+    student = relationship("StudentProfile")
+    opening = relationship("AdmissionOpening")
