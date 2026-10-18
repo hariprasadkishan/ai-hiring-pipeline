@@ -84,7 +84,8 @@ export default function TeacherDashboard() {
         <div>
           <h1 className="dashboard-title">Faculty Portal</h1>
           <p className="dashboard-subtitle">
-            View and manage your active and past postgraduate admission openings
+            Manage your postgraduate admission openings, review candidate
+            resumes, and run AI evaluations
           </p>
         </div>
         <Link href="/teacher/create-opening" className="btn btn-primary">
@@ -180,8 +181,22 @@ export default function TeacherDashboard() {
               </div>
 
               {/* Dates & Actions */}
-              <div className="opening-card-footer">
-                <div className="date-group">
+              <div
+                className="opening-card-footer"
+                style={{
+                  flexDirection: "column",
+                  gap: "0.75rem",
+                  alignItems: "stretch",
+                }}
+              >
+                <div
+                  className="date-group"
+                  style={{
+                    justifyContent: "space-between",
+                    fontSize: "0.8rem",
+                    color: "#94a3b8",
+                  }}
+                >
                   <span>
                     Open: {new Date(opening.start_date).toLocaleDateString()}
                   </span>
@@ -192,9 +207,15 @@ export default function TeacherDashboard() {
 
                 <Link
                   href={`/teacher/openings/${opening.opening_id}/applications`}
-                  className="btn-link"
+                  className="btn btn-primary"
+                  style={{
+                    textAlign: "center",
+                    padding: "0.5rem 1rem",
+                    fontSize: "0.875rem",
+                    textDecoration: "none",
+                  }}
                 >
-                  View Applicants &rarr;
+                  View Applicants & Evaluate &rarr;
                 </Link>
               </div>
             </div>

@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Enum, TIMESTAMP, ForeignKey, JSON, Float, text,Text
+from sqlalchemy import Column, String, Enum, TIMESTAMP, ForeignKey, JSON, Float, text, Text
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -43,7 +43,7 @@ class AdmissionOpening(Base):
     title = Column(String(150), nullable=False)
     department = Column(String(100), nullable=False)
     
-    # --- New JD / Research Fields ---
+    # JD / Research Requirements
     description = Column(Text, nullable=True)             # Overview of research lab / project scope
     research_areas = Column(JSON, nullable=True)         # Target research domains e.g., ["NLP", "Computer Vision"]
     preferred_skills = Column(JSON, nullable=True)        # Nice-to-have tools e.g., ["PyTorch", "Docker"]
@@ -61,9 +61,6 @@ class AdmissionOpening(Base):
 
     teacher = relationship("TeacherProfile")
 
-
-# Add this class to models.py
-
 class Application(Base):
     __tablename__ = "applications"
 
@@ -73,8 +70,21 @@ class Application(Base):
     gpa = Column(Float, nullable=False)
     gate_score = Column(Float, nullable=True)
     resume_url = Column(String(500), nullable=True)
+
+    # Evaluation Scores & Feedback
+    resume_score = Column(Float, nullable=True)
+    resume_feedback = Column(JSON, nullable=True)
+
     status = Column(
-        Enum("APPLIED", "INTERVIEW_PENDING", "ACCEPTED", "REJECTED", name="application_status"),
+        Enum(
+            "APPLIED",
+            "SHORTLISTED",
+            "REJECTED",
+            "INTERVIEW_PENDING",
+            "ACCEPTED",
+            "COMPLETED",
+            name="application_status"
+        ),
         default="APPLIED",
         nullable=False
     )
