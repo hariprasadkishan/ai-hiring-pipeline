@@ -8,3 +8,8 @@ python-multipart
 pydantic
 email-validator
 bcrypt==4.0.1
+pypdf
+httpx
+openai
+cloudinary
+python-dotenv
