@@ -47,10 +47,11 @@ def list_applicants(
     return get_opening_applicants(opening_id, db, current_user)
 
 @router.post("/{opening_id}/evaluate-resumes", tags=["Faculty Evaluation"])
-def evaluate_candidates(
+async def evaluate_candidates(
     opening_id: str,
     payload: EvaluateResumesSchema,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user_data),
 ):
-    return evaluate_and_shortlist_candidates(opening_id, payload, db, current_user)
+    return await evaluate_and_shortlist_candidates(opening_id, payload, db, current_user)
+

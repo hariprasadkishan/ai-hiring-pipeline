@@ -1,3 +1,4 @@
+import asyncio
 from typing import Optional
 from fastapi import HTTPException, status, UploadFile
 from fastapi.responses import Response
@@ -6,8 +7,8 @@ from models import User, StudentProfile, AdmissionOpening, Application
 from schemas import EvaluateResumesSchema
 from config.settings import MAX_FILE_SIZE
 from services.cloudinary_service import upload_resume
-from services.pdf_service import extract_text_from_pdf_url, fetch_pdf_bytes
-from services.llm_service import evaluate_resume_with_llm
+from services.pdf_service import extract_text_from_pdf_url, extract_text_from_pdf_url_async, fetch_pdf_bytes
+from services.llm_service import evaluate_resume_with_llm, evaluate_resume_with_llm_async
 from controllers.opening_controller import compute_opening_status
 from utils.security import verify_token_str
 
@@ -55,7 +56,7 @@ def get_opening_applicants(opening_id: str, db: Session, current_user: dict) -> 
         "applicants": result
     }
 
-def evaluate_and_shortlist_candidates(
+async def evaluate_and_shortlist_candidates(
     opening_id: str,
     payload: EvaluateResumesSchema,
     db: Session,
@@ -90,21 +91,56 @@ def evaluate_and_shortlist_candidates(
         else:
             passed_academic_filter.append(app_item)
 
-    # STEP 2: Resume Evaluation via OpenRouter
-    for app_item in passed_academic_filter:
-        if app_item.resume_url:
-            resume_text = extract_text_from_pdf_url(app_item.resume_url)
-            if resume_text:
-                eval_result = evaluate_resume_with_llm(resume_text, opening)
-                app_item.resume_score = float(eval_result.get("resume_score", 70.0))
-                app_item.resume_feedback = eval_result
+    # STEP 2: Resume Evaluation (Concurrent with Semaphore + Cached)
+    semaphore = asyncio.Semaphore(5)
+
+    async def evaluate_single_application(app_item: Application):
+        # 2a. Check Cache: If already evaluated and not forcing re-evaluation, reuse existing score
+        if not payload.force_reevaluate and app_item.resume_score is not None and app_item.resume_feedback is not None:
+            return
+
+        async with semaphore:
+            if app_item.resume_url:
+                resume_text = await extract_text_from_pdf_url_async(app_item.resume_url)
+                if resume_text:
+                    eval_result = await evaluate_resume_with_llm_async(resume_text, opening)
+                    app_item.resume_score = float(eval_result.get("resume_score", 60.0))
+                    app_item.resume_feedback = eval_result
+                else:
+                    gpa_normalized = round((app_item.gpa / 10.0) * 100, 1)
+                    app_item.resume_score = min(gpa_normalized, 55.0)
+                    app_item.resume_feedback = {
+                        "resume_score": app_item.resume_score,
+                        "score_breakdown": {
+                            "prerequisites_score": 15.0,
+                            "research_alignment_score": 15.0,
+                            "technical_skills_score": 15.0,
+                            "projects_achievements_score": 10.0
+                        },
+                        "matching_skills": [],
+                        "missing_skills": [],
+                        "summary_reasoning": "Could not extract readable text from PDF resume. Scored using baseline academic metric."
+                    }
             else:
-                app_item.resume_score = 50.0
-                app_item.resume_feedback = {"summary_reasoning": "Could not extract readable text from PDF resume."}
-        else:
-            gpa_normalized = (app_item.gpa / 10.0) * 100
-            app_item.resume_score = round(gpa_normalized, 1)
-            app_item.resume_feedback = {"summary_reasoning": "Evaluated based on normalized GPA performance."}
+                # For candidates without resume uploads (e.g. M.Tech applications)
+                gpa_normalized = round((app_item.gpa / 10.0) * 100, 1)
+                app_item.resume_score = gpa_normalized
+                app_item.resume_feedback = {
+                    "resume_score": gpa_normalized,
+                    "score_breakdown": {
+                        "prerequisites_score": round((app_item.gpa / 10.0) * 35, 1),
+                        "research_alignment_score": round((app_item.gpa / 10.0) * 30, 1),
+                        "technical_skills_score": round((app_item.gpa / 10.0) * 20, 1),
+                        "projects_achievements_score": round((app_item.gpa / 10.0) * 15, 1)
+                    },
+                    "matching_skills": [],
+                    "missing_skills": [],
+                    "summary_reasoning": "Evaluated based on normalized GPA academic performance."
+                }
+
+    tasks = [evaluate_single_application(app) for app in passed_academic_filter]
+    if tasks:
+        await asyncio.gather(*tasks)
 
     # STEP 3: Capacity Shortlisting
     passed_academic_filter.sort(key=lambda x: x.resume_score or 0.0, reverse=True)
