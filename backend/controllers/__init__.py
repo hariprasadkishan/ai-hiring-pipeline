@@ -12,6 +12,11 @@ from .application_controller import (
     get_student_applications,
     stream_application_resume,
 )
+from .interview_controller import (
+    start_interview_session,
+    submit_candidate_answer,
+    get_interview_session_details,
+)
 
 __all__ = [
     "register_user",
@@ -25,4 +30,7 @@ __all__ = [
     "apply_for_opening",
     "get_student_applications",
     "stream_application_resume",
+    "start_interview_session",
+    "submit_candidate_answer",
+    "get_interview_session_details",
 ]

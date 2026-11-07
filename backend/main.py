@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
 import models  # Ensures all ORM models are registered with Base metadata
 from config.settings import CORS_ORIGINS
-from routes import auth_router, opening_router, application_router
+from routes import auth_router, opening_router, application_router, interview_router
 
 # Initialize database schema tables
 Base.metadata.create_all(bind=engine)
@@ -27,6 +27,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(opening_router)
 app.include_router(application_router)
+app.include_router(interview_router)
 
 @app.get("/api/health", tags=["Health"])
 def health_check():

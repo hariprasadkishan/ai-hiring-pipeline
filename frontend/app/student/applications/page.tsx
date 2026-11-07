@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import "@/styles/teacher-opening.css"; // Reuse existing dark dashboard theme styles
+import "@/styles/teacher-opening.css";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -71,15 +71,10 @@ export default function StudentApplicationsPage() {
 
   useEffect(() => {
     let active = true;
-
     const init = async () => {
-      if (active) {
-        await fetchMyApplications();
-      }
+      if (active) await fetchMyApplications();
     };
-
     init();
-
     return () => {
       active = false;
     };
@@ -125,11 +120,11 @@ export default function StudentApplicationsPage() {
   const getStatusDescription = (status: ApplicationItem["status"]) => {
     switch (status) {
       case "SHORTLISTED":
-        return "Your application has been shortlisted by the admissions panel!";
+        return "Congratulations! Your application has been shortlisted. You are eligible to start your AI technical interview.";
       case "REJECTED":
         return "Your application was not selected for this position.";
       case "INTERVIEW_PENDING":
-        return "You have been moved to the interview round. Check your email for scheduling updates.";
+        return "You have an active or pending interview round ready to complete.";
       case "ACCEPTED":
         return "Congratulations! Offer extended for admission.";
       case "COMPLETED":
@@ -149,8 +144,8 @@ export default function StudentApplicationsPage() {
         <div>
           <h1 className="dashboard-title">My Applications</h1>
           <p className="dashboard-subtitle">
-            Track evaluation status, feedback, and progress across all applied
-            programs
+            Track evaluation status, feedback, and take your AI technical
+            interview
           </p>
         </div>
       </header>
@@ -196,170 +191,177 @@ export default function StudentApplicationsPage() {
         <div
           style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}
         >
-          {applications.map((app) => (
-            <div
-              key={app.application_id}
-              style={{
-                backgroundColor: "#1e293b",
-                border: "1px solid #334155",
-                borderRadius: "8px",
-                padding: "1.25rem",
-                display: "flex",
-                flexDirection: "column",
-                gap: "1rem",
-              }}
-            >
-              {/* Top Row: Opening Details & Status Badge */}
+          {applications.map((app) => {
+            const isInterviewEligible =
+              app.status === "SHORTLISTED" ||
+              app.status === "INTERVIEW_PENDING";
+
+            return (
               <div
+                key={app.application_id}
                 style={{
+                  backgroundColor: "#1e293b",
+                  border: "1px solid #334155",
+                  borderRadius: "8px",
+                  padding: "1.25rem",
                   display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  flexWrap: "wrap",
-                  gap: "0.5rem",
+                  flexDirection: "column",
+                  gap: "1rem",
                 }}
               >
-                <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      marginBottom: "0.25rem",
-                    }}
-                  >
-                    <span
-                      className={`badge badge-degree ${app.program_type.toLowerCase()}`}
-                    >
-                      {app.program_type}
-                    </span>
-                    <span style={{ fontSize: "0.8rem", color: "#94a3b8" }}>
-                      {app.department}
-                    </span>
-                  </div>
-                  <h2
-                    style={{ margin: 0, fontSize: "1.25rem", color: "#f8fafc" }}
-                  >
-                    {app.title}
-                  </h2>
-                </div>
-
-                <span
+                {/* Header Row */}
+                <div
                   style={{
-                    padding: "0.35rem 0.75rem",
-                    borderRadius: "9999px",
-                    fontSize: "0.8rem",
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                    ...getStatusBadgeStyle(app.status),
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    flexWrap: "wrap",
+                    gap: "0.5rem",
                   }}
                 >
-                  {app.status.replace("_", " ")}
-                </span>
-              </div>
-
-              {/* Status Explanation Banner */}
-              <div
-                style={{
-                  backgroundColor: "#0f172a",
-                  padding: "0.75rem 1rem",
-                  borderRadius: "6px",
-                  borderLeft: "4px solid #3b82f6",
-                  fontSize: "0.875rem",
-                  color: "#e2e8f0",
-                }}
-              >
-                {getStatusDescription(app.status)}
-              </div>
-
-              {/* Application Details Grid */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                  gap: "1rem",
-                  paddingTop: "0.5rem",
-                  borderTop: "1px solid #334155",
-                  fontSize: "0.85rem",
-                  color: "#94a3b8",
-                }}
-              >
-                <div>
-                  Submitted GPA:{" "}
-                  <strong style={{ color: "#f8fafc" }}>{app.gpa} / 10</strong>
-                </div>
-                <div>
-                  GATE Score:{" "}
-                  <strong style={{ color: "#f8fafc" }}>
-                    {app.gate_score ?? "N/A"}
-                  </strong>
-                </div>
-                <div>
-                  Applied On:{" "}
-                  <strong style={{ color: "#f8fafc" }}>
-                    {new Date(app.applied_at).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </strong>
-                </div>
-                {app.resume_url && (
                   <div>
-                    Submitted Resume:{" "}
-                    <a
-                      href={`${API_BASE_URL}/api/applications/${app.application_id}/resume?token=${localStorage.getItem(
-                        "access_token",
-                      )}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <div
                       style={{
-                        color: "#60a5fa",
-                        textDecoration: "underline",
-                        marginLeft: "0.25rem",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        marginBottom: "0.25rem",
                       }}
                     >
-                      View PDF
-                    </a>
+                      <span
+                        className={`badge badge-degree ${app.program_type.toLowerCase()}`}
+                      >
+                        {app.program_type}
+                      </span>
+                      <span style={{ fontSize: "0.8rem", color: "#94a3b8" }}>
+                        {app.department}
+                      </span>
+                    </div>
+                    <h2
+                      style={{
+                        margin: 0,
+                        fontSize: "1.25rem",
+                        color: "#f8fafc",
+                      }}
+                    >
+                      {app.title}
+                    </h2>
                   </div>
-                )}
-              </div>
 
-              {/* Assessment Feedback (If Evaluated) */}
-              {app.resume_feedback && app.resume_feedback.summary_reasoning && (
+                  <span
+                    style={{
+                      padding: "0.35rem 0.75rem",
+                      borderRadius: "9999px",
+                      fontSize: "0.8rem",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      ...getStatusBadgeStyle(app.status),
+                    }}
+                  >
+                    {app.status.replace("_", " ")}
+                  </span>
+                </div>
+
+                {/* Status Explanation Banner */}
                 <div
                   style={{
                     backgroundColor: "#0f172a",
-                    padding: "1rem",
+                    padding: "0.75rem 1rem",
                     borderRadius: "6px",
-                    border: "1px solid #334155",
-                    marginTop: "0.25rem",
+                    borderLeft: `4px solid ${isInterviewEligible ? "#10b981" : "#3b82f6"}`,
+                    fontSize: "0.875rem",
+                    color: "#e2e8f0",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: "0.75rem",
                   }}
                 >
-                  <h4
-                    style={{
-                      margin: "0 0 0.5rem 0",
-                      fontSize: "0.85rem",
-                      color: "#60a5fa",
-                    }}
-                  >
-                    Academic Assessment Feedback
-                  </h4>
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: "0.85rem",
-                      color: "#cbd5e1",
-                      lineHeight: "1.4",
-                    }}
-                  >
-                    {app.resume_feedback.summary_reasoning}
-                  </p>
+                  <span>{getStatusDescription(app.status)}</span>
+
+                  {/* AI Interview Launch Button */}
+                  {isInterviewEligible && (
+                    <button
+                      onClick={() =>
+                        router.push(`/student/interview/${app.application_id}`)
+                      }
+                      style={{
+                        backgroundColor: "#10b981",
+                        color: "#022c22",
+                        border: "none",
+                        padding: "0.5rem 1.25rem",
+                        borderRadius: "6px",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        fontSize: "0.875rem",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        boxShadow: "0 2px 8px rgba(16, 185, 129, 0.3)",
+                      }}
+                    >
+                      <span>🤖</span> Start AI Interview
+                    </button>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
+
+                {/* Application Details Grid */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                    gap: "1rem",
+                    paddingTop: "0.5rem",
+                    borderTop: "1px solid #334155",
+                    fontSize: "0.85rem",
+                    color: "#94a3b8",
+                  }}
+                >
+                  <div>
+                    Submitted GPA:{" "}
+                    <strong style={{ color: "#f8fafc" }}>{app.gpa} / 10</strong>
+                  </div>
+                  <div>
+                    GATE Score:{" "}
+                    <strong style={{ color: "#f8fafc" }}>
+                      {app.gate_score ?? "N/A"}
+                    </strong>
+                  </div>
+                  <div>
+                    Applied On:{" "}
+                    <strong style={{ color: "#f8fafc" }}>
+                      {new Date(app.applied_at).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </strong>
+                  </div>
+                  {app.resume_url && (
+                    <div>
+                      Submitted Resume:{" "}
+                      <a
+                        href={`${API_BASE_URL}/api/applications/${app.application_id}/resume?token=${localStorage.getItem(
+                          "access_token",
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          color: "#60a5fa",
+                          textDecoration: "underline",
+                          marginLeft: "0.25rem",
+                        }}
+                      >
+                        View PDF
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

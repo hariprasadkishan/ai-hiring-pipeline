@@ -13,3 +13,4 @@ httpx
 openai
 cloudinary
 python-dotenv
+langgraph

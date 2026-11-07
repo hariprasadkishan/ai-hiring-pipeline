@@ -5,6 +5,10 @@ from models import (
     StudentProfile,
     AdmissionOpening,
     Application,
+    InterviewSession,
+    InterviewMessage,
+    InterviewSessionStatus,
+    MessageSender,
 )
 
 __all__ = [
@@ -13,4 +17,8 @@ __all__ = [
     "StudentProfile",
     "AdmissionOpening",
     "Application",
+    "InterviewSession",
+    "InterviewMessage",
+    "InterviewSessionStatus",
+    "MessageSender",
 ]
