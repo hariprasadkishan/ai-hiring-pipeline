@@ -1,12 +1,40 @@
 # Secret Environment Files (NEVER push these to GitHub)
 backend/.env
 frontend/.env.local
+.env
+*.env
+!.env.example
 
 # Heavy Dependency Folders (Auto-generated)
 frontend/node_modules/
 frontend/.next/
+frontend/out/
 
 # Python Cache Folders
 **/__pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 .pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+ENV/
+
+# OS and Editor Files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Identity audit logs (auto-generated sensitive biometric data)
+backend/identity_log_*.json
+backend/identity_logs/

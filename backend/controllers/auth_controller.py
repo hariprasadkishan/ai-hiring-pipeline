@@ -3,15 +3,16 @@ from sqlalchemy.orm import Session
 from models import User, TeacherProfile, StudentProfile
 from schemas import RegisterSchema, LoginSchema
 from utils.security import hash_password, verify_password, create_access_token
+from config.settings import RECRUITER_EMAIL_DOMAIN
 
 def register_user(payload: RegisterSchema, db: Session) -> dict:
     if payload.role not in ["teacher", "student"]:
         raise HTTPException(status_code=400, detail="Invalid role specified")
 
-    if payload.role == "teacher" and not payload.email.endswith("@iiitdwd.ac.in"):
+    if payload.role == "teacher" and RECRUITER_EMAIL_DOMAIN and not payload.email.endswith(RECRUITER_EMAIL_DOMAIN):
         raise HTTPException(
             status_code=400, 
-            detail="Faculty registration is restricted to official @iiitdwd.ac.in accounts only."
+            detail=f"Registration is restricted to official {RECRUITER_EMAIL_DOMAIN} accounts only."
         )
 
     existing_user = db.query(User).filter(User.email == payload.email).first()

@@ -1,7 +1,7 @@
 from .user import User, TeacherProfile, StudentProfile
 from .opening import AdmissionOpening
 from .application import Application
-from .interview import InterviewSession, InterviewMessage, InterviewSessionStatus, MessageSender
+from .interview import InterviewSession, InterviewMessage, InterviewSessionStatus, MessageSender, InterviewSlot
 
 __all__ = [
     "User",
@@ -13,4 +13,5 @@ __all__ = [
     "InterviewMessage",
     "InterviewSessionStatus",
     "MessageSender",
+    "InterviewSlot",
 ]

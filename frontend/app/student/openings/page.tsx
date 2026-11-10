@@ -44,7 +44,7 @@ export default function StudentOpeningsPage() {
   const fetchOpenings = useCallback(async () => {
     const token = localStorage.getItem("access_token");
     if (!token) {
-      router.push("/login");
+      router.push("/");
       return;
     }
 
@@ -55,7 +55,7 @@ export default function StudentOpeningsPage() {
 
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
-          router.push("/login");
+          router.push("/");
           return;
         }
         throw new Error("Failed to load admission openings.");
@@ -532,50 +532,45 @@ export default function StudentOpeningsPage() {
                 />
               </div>
 
-              {/* Ph.D. Specific Resume PDF Upload Field */}
-              {selectedOpening.program_type === "PhD" ? (
-                <div className="form-group-dark">
-                  <label className="form-label-dark">
-                    Upload Resume / CV (PDF required for Ph.D. - Max 5MB)
-                  </label>
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    required
-                    className="form-input-dark"
-                    onChange={(e) => {
-                      const selectedFile = e.target.files
-                        ? e.target.files[0]
-                        : null;
+              {/* Resume Upload Field (PDF or DOCX) */}
+              <div className="form-group-dark">
+                <label className="form-label-dark">
+                  Upload Resume / CV (PDF or DOCX - Max 5MB) {selectedOpening.program_type === "PhD" ? "(Required)" : "(Recommended)"}
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  required={selectedOpening.program_type === "PhD"}
+                  className="form-input-dark"
+                  onChange={(e) => {
+                    const selectedFile = e.target.files
+                      ? e.target.files[0]
+                      : null;
 
-                      if (selectedFile) {
-                        if (!selectedFile.name.toLowerCase().endsWith(".pdf")) {
-                          setApplyError("Selected file must be in PDF format.");
-                          e.target.value = "";
-                          setResumeFile(null);
-                          return;
-                        }
-
-                        if (selectedFile.size > 5 * 1024 * 1024) {
-                          setApplyError(
-                            "File size exceeds 5MB limit. Please choose a smaller resume.",
-                          );
-                          e.target.value = "";
-                          setResumeFile(null);
-                          return;
-                        }
+                    if (selectedFile) {
+                      const nameLower = selectedFile.name.toLowerCase();
+                      if (!nameLower.endsWith(".pdf") && !nameLower.endsWith(".docx")) {
+                        setApplyError("Selected file must be in PDF or DOCX format.");
+                        e.target.value = "";
+                        setResumeFile(null);
+                        return;
                       }
 
-                      setApplyError("");
-                      setResumeFile(selectedFile);
-                    }}
-                  />
-                </div>
-              ) : (
-                <p style={{ fontSize: "0.8rem", color: "#94a3b8" }}>
-                  * Resume upload is not required for M.Tech applications.
-                </p>
-              )}
+                      if (selectedFile.size > 5 * 1024 * 1024) {
+                        setApplyError(
+                          "File size exceeds 5MB limit. Please choose a smaller resume.",
+                        );
+                        e.target.value = "";
+                        setResumeFile(null);
+                        return;
+                      }
+                    }
+
+                    setApplyError("");
+                    setResumeFile(selectedFile);
+                  }}
+                />
+              </div>
 
               <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                 <button

@@ -7,6 +7,15 @@ from .interview_schemas import (
     InterviewMessageResponse,
     InterviewTurnResponse,
     InterviewSessionDetailResponse,
+    InterviewSlotResponse,
+    BookInterviewSlotRequest,
+    BookingConfirmationResponse,
+    IdentityVerificationRequest,
+    IdentityVerificationResponse,
+    IdentityStatusResponse,
+    TranscribeAudioResponse,
+    FinalRecommendationCandidate,
+    FinalRecommendationReport,
 )
 
 __all__ = [
@@ -19,4 +28,13 @@ __all__ = [
     "InterviewMessageResponse",
     "InterviewTurnResponse",
     "InterviewSessionDetailResponse",
+    "InterviewSlotResponse",
+    "BookInterviewSlotRequest",
+    "BookingConfirmationResponse",
+    "IdentityVerificationRequest",
+    "IdentityVerificationResponse",
+    "IdentityStatusResponse",
+    "TranscribeAudioResponse",
+    "FinalRecommendationCandidate",
+    "FinalRecommendationReport",
 ]

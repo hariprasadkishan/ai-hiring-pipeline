@@ -205,11 +205,13 @@ async def apply_for_opening(
     resume_url = None
     if opening.program_type == "PhD":
         if not resume or not resume.filename:
-            raise HTTPException(status_code=400, detail="Ph.D. applications require a resume PDF upload.")
+            raise HTTPException(status_code=400, detail="Applications require a resume (PDF or DOCX) upload.")
 
     if resume and resume.filename:
-        if resume.content_type != "application/pdf" or not resume.filename.lower().endswith(".pdf"):
-            raise HTTPException(status_code=400, detail="Resume must be in a valid PDF format.")
+        filename_lower = resume.filename.lower()
+        allowed_extensions = (".pdf", ".docx")
+        if not any(filename_lower.endswith(ext) for ext in allowed_extensions):
+            raise HTTPException(status_code=400, detail="Resume must be in PDF or DOCX format.")
 
         try:
             resume.file.seek(0, 2)
@@ -222,7 +224,7 @@ async def apply_for_opening(
             raise HTTPException(status_code=400, detail="Invalid file payload.")
 
         try:
-            resume_url = upload_resume(resume.file, student.student_id, opening_id)
+            resume_url = upload_resume(resume.file, student.student_id, opening_id, filename=resume.filename)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to upload resume: {str(e)}")
 
@@ -293,18 +295,21 @@ def stream_application_resume(application_id: str, token: Optional[str], db: Ses
 
     app_item = db.query(Application).filter(Application.application_id == application_id).first()
     if not app_item or not app_item.resume_url:
-        raise HTTPException(status_code=404, detail="Resume PDF not found for this application.")
+        raise HTTPException(status_code=404, detail="Resume file not found for this application.")
 
     try:
-        pdf_bytes = fetch_pdf_bytes(app_item.resume_url)
+        doc_bytes = fetch_pdf_bytes(app_item.resume_url)
+        is_docx = app_item.resume_url.lower().endswith(".docx")
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document" if is_docx else "application/pdf"
+        ext = "docx" if is_docx else "pdf"
 
         return Response(
-            content=pdf_bytes,
-            media_type="application/pdf",
+            content=doc_bytes,
+            media_type=media_type,
             headers={
-                "Content-Disposition": f"inline; filename=resume_{application_id}.pdf"
+                "Content-Disposition": f"inline; filename=resume_{application_id}.{ext}"
             }
         )
     except Exception as e:
         print(f"[Resume View Error] Failed to stream resume: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to load resume PDF.")
+        raise HTTPException(status_code=500, detail="Failed to load resume document.")
