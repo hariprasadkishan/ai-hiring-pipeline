@@ -14,3 +14,7 @@ openai
 cloudinary
 python-dotenv
 langgraph
+python-docx
+opencv-python-headless<5
+numpy
+

@@ -9,6 +9,7 @@ from models import (
     InterviewMessage,
     InterviewSessionStatus,
     MessageSender,
+    InterviewSlot,
 )
 
 __all__ = [
@@ -21,4 +22,5 @@ __all__ = [
     "InterviewMessage",
     "InterviewSessionStatus",
     "MessageSender",
+    "InterviewSlot",
 ]

@@ -30,7 +30,7 @@ export default function TeacherDashboard() {
       const token = localStorage.getItem("access_token");
 
       if (!token) {
-        router.push("/login");
+        router.push("/");
         return;
       }
 
@@ -46,7 +46,7 @@ export default function TeacherDashboard() {
         if (!response.ok) {
           if (response.status === 401 || response.status === 403) {
             localStorage.removeItem("access_token");
-            router.push("/login");
+            router.push("/");
             return;
           }
           const errorData = await response.json();

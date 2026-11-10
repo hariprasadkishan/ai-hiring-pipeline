@@ -28,14 +28,15 @@ export default function LoginPage() {
     setMessage("");
     setLoading(true);
 
-    // ⭐️ FIX: Enforce the institute email restriction ONLY for teachers
+    const recruiterDomain = process.env.NEXT_PUBLIC_RECRUITER_DOMAIN || "";
     if (
       isRegistering &&
       role === "teacher" &&
-      !email.endsWith("@iiitdwd.ac.in")
+      recruiterDomain &&
+      !email.endsWith(recruiterDomain)
     ) {
       setError(
-        "Faculty registration is restricted to official @iiitdwd.ac.in accounts only.",
+        `Staff registration is restricted to official ${recruiterDomain} accounts only.`,
       );
       setLoading(false);
       return;

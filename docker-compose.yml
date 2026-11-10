@@ -13,7 +13,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:z
 
   # FastAPI Backend Service
   backend:
@@ -23,10 +23,11 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app
+      - ./backend:/app:z
+    env_file:
+      - ./backend/.env
     environment:
       - DATABASE_URL=mysql+pymysql://root:rootpassword@mysql:3306/admission_db
-      - SECRET_KEY=YOUR_SUPER_SECRET_JWT_KEY
     depends_on:
       - mysql
 
@@ -38,7 +39,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./frontend:/app
+      - ./frontend:/app:z
       - /app/node_modules
       - /app/.next
     environment:
