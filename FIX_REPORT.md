@@ -142,6 +142,7 @@ cd frontend && npm run start
 
 ---
 
+<<<<<<< HEAD
 ---
 
 ## 7. Stage 4 — AI Voice Interview Question Visibility Fix (November 11, 2026)
@@ -190,4 +191,9 @@ When a candidate entered the interview page, the interview question was not appe
 - **Frontend Production Build:**
   - `npm run build` compiled with Turbopack in under 900ms with zero errors. All routes verified.
 
+=======
+## 6. Remaining Issues
+
+- **None.** The backend container is healthy and auto-reloads safely without crashing. The frontend communicates with the backend on both `localhost` and `127.0.0.1` without CORS or network errors. All five pipeline stages are fully operational.
+>>>>>>> origin/main
 

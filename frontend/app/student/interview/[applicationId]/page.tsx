@@ -77,6 +77,7 @@ export default function StudentInterviewPage() {
   const [ttsEnabled, setTtsEnabled] = useState<boolean>(true);
   const [speaking, setSpeaking] = useState<boolean>(false);
   const recognitionRef = useRef<any>(null);
+<<<<<<< HEAD
   const ttsEnabledRef = useRef<boolean>(ttsEnabled);
 
   useEffect(() => {
@@ -96,6 +97,8 @@ export default function StudentInterviewPage() {
       setCurrentQuestion(activeQuestion);
     }
   }, [activeQuestion, currentQuestion]);
+=======
+>>>>>>> origin/main
 
   // Live Proctoring & Anti-Swap Telemetry
   const [proctoringTelemetry, setProctoringTelemetry] = useState<ProctoringTelemetry>({
@@ -121,9 +124,15 @@ export default function StudentInterviewPage() {
     setProctoringTelemetry(telemetry);
   }, []);
 
+<<<<<<< HEAD
   // Text-To-Speech Synthesizer with Chrome resilience
   const speakText = useCallback((text: string) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window) || !text) return;
+=======
+  // Text-To-Speech Synthesizer
+  const speakText = useCallback((text: string) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+>>>>>>> origin/main
     try {
       window.speechSynthesis.cancel();
       const cleanText = text.replace(/[*_#`]/g, "");
@@ -132,6 +141,7 @@ export default function StudentInterviewPage() {
       utterance.pitch = 1.0;
       utterance.onstart = () => setSpeaking(true);
       utterance.onend = () => setSpeaking(false);
+<<<<<<< HEAD
       utterance.onerror = (e) => {
         console.warn("TTS playback warning/interrupted:", e);
         setSpeaking(false);
@@ -144,6 +154,10 @@ export default function StudentInterviewPage() {
           setSpeaking(false);
         }
       }, 50);
+=======
+      utterance.onerror = () => setSpeaking(false);
+      window.speechSynthesis.speak(utterance);
+>>>>>>> origin/main
     } catch (e) {
       console.error("Speech synthesis error:", e);
       setSpeaking(false);
@@ -151,6 +165,63 @@ export default function StudentInterviewPage() {
   }, []);
 
   // Initialize Speech-To-Text (Web Speech API)
+<<<<<<< HEAD
+=======
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+
+      recognition.onresult = (event: any) => {
+        let finalTranscript = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript + " ";
+          }
+        }
+        if (finalTranscript) {
+          setInputValue((prev) => (prev ? prev + " " + finalTranscript.trim() : finalTranscript.trim()));
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn("Speech recognition error:", event.error);
+        setIsRecording(false);
+      };
+
+      recognition.onend = () => {
+        setIsRecording(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, []);
+
+  const toggleVoiceRecording = () => {
+    if (!recognitionRef.current) {
+      alert("Speech recognition is not supported in this browser. You can type your answer in the text field.");
+      return;
+    }
+    if (isRecording) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+    } else {
+      try {
+        recognitionRef.current.start();
+        setIsRecording(true);
+      } catch (e) {
+        console.error("Failed starting speech recognition:", e);
+      }
+    }
+  };
+
+  // 1. Check Identity Status & Fetch Session on Mount
+>>>>>>> origin/main
   useEffect(() => {
     if (typeof window === "undefined") return;
     const SpeechRecognition =
@@ -207,6 +278,7 @@ export default function StudentInterviewPage() {
   // 1. Check Identity Status & Fetch Session on Mount
   const checkGateAndFetch = useCallback(async () => {
     if (!applicationId) return;
+<<<<<<< HEAD
     const token = localStorage.getItem("access_token");
     if (!token) {
       router.push("/");
@@ -257,6 +329,67 @@ export default function StudentInterviewPage() {
           setLoading(false);
           setQuestionLoading(false);
           return;
+=======
+    let isMounted = true;
+
+    const checkGateAndFetch = async () => {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        router.push("/");
+        return;
+      }
+
+      try {
+        // Step A: Check Stage 3 Hard Gate Status
+        const gateRes = await fetch(`${API_BASE_URL}/api/interview/identity-status/${applicationId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (gateRes.ok) {
+          const gateData = await gateRes.json();
+          if (isMounted) {
+            if (gateData.passed) {
+              setIdentityVerified(true);
+              setIdentityStatus("PASS");
+              setIdentityConfidence(gateData.confidence || 1.0);
+            } else {
+              setIdentityVerified(false);
+              setIdentityStatus(gateData.status);
+              setIdentityReason(gateData.reason || "");
+              setLoading(false);
+              return;
+            }
+          }
+        }
+
+        // Step B: Start or Resume Session (If Gate Passed)
+        const res = await fetch(`${API_BASE_URL}/api/interview/start`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ application_id: applicationId }),
+        });
+
+        if (res.status === 403) {
+          const errData = await res.json().catch(() => ({}));
+          if (errData.detail?.error === "IDENTITY_HARD_GATE_BLOCKED") {
+            if (isMounted) {
+              setIdentityVerified(false);
+              setIdentityStatus(errData.detail.identity_status || "NOT_VERIFIED");
+              setIdentityReason(errData.detail.message || "Stage 3 biometric verification required.");
+              setLoading(false);
+            }
+            return;
+          }
+          throw new Error(errData.detail?.message || errData.detail || "Access denied.");
+        }
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || "Failed to initialize interview.");
+>>>>>>> origin/main
         }
         throw new Error(errData.detail?.message || errData.detail || "Access denied.");
       }
@@ -266,6 +399,7 @@ export default function StudentInterviewPage() {
         throw new Error(errData.detail || "Failed to initialize interview.");
       }
 
+<<<<<<< HEAD
       const data = await res.json();
       setIdentityVerified(true);
       setSessionId(data.session_id);
@@ -273,6 +407,12 @@ export default function StudentInterviewPage() {
       setTotalQuestions(data.total_questions || 5);
       if (data.agentic_action) setCurrentDecision(data.agentic_action);
       if (data.last_turn_feedback) setLatestReasoning(data.last_turn_feedback);
+=======
+        setIdentityVerified(true);
+        setSessionId(data.session_id);
+        setCurrentQuestionIndex(data.current_question_index);
+        setTotalQuestions(data.total_questions || 5);
+>>>>>>> origin/main
 
       // Populate full message history if returned from backend
       if (data.messages && data.messages.length > 0) {
@@ -292,6 +432,9 @@ export default function StudentInterviewPage() {
         setCurrentQuestion(data.current_question);
         if (!data.messages || data.messages.length === 0) {
           setMessages([{ sender: "AI", content: data.current_question }]);
+          if (ttsEnabled) {
+            speakText(data.current_question);
+          }
         }
         if (ttsEnabledRef.current) {
           speakText(data.current_question);
@@ -307,9 +450,40 @@ export default function StudentInterviewPage() {
     }
   }, [applicationId, router, speakText]);
 
+<<<<<<< HEAD
   useEffect(() => {
     checkGateAndFetch();
   }, [checkGateAndFetch]);
+
+  // Stage 3: Mount Webcam Stream for Verification Gate
+  useEffect(() => {
+    if (identityVerified || loading) return;
+    let stream: MediaStream | null = null;
+
+    navigator.mediaDevices
+      ?.getUserMedia({ video: { width: 480, height: 360, facingMode: "user" } })
+      .then((s) => {
+        stream = s;
+        if (gateVideoRef.current) {
+          gateVideoRef.current.srcObject = s;
+          gateVideoRef.current.play();
+        }
+      })
+      .catch((e) => {
+        console.warn("Gate camera init error:", e);
+      });
+=======
+    checkGateAndFetch();
+>>>>>>> origin/main
+
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((t) => t.stop());
+      }
+    };
+<<<<<<< HEAD
+=======
+  }, [applicationId, router, speakText, ttsEnabled]);
 
   // Stage 3: Mount Webcam Stream for Verification Gate
   useEffect(() => {
@@ -334,6 +508,7 @@ export default function StudentInterviewPage() {
         stream.getTracks().forEach((t) => t.stop());
       }
     };
+>>>>>>> origin/main
   }, [identityVerified, loading]);
 
   // Stage 3: Handle Live Biometric Verification (HARD GATE)
@@ -397,6 +572,7 @@ export default function StudentInterviewPage() {
 
       if (data.passed) {
         setIdentityVerified(true);
+<<<<<<< HEAD
         setQuestionLoading(true);
         setError("");
 
@@ -442,6 +618,26 @@ export default function StudentInterviewPage() {
           if (startErr instanceof Error) setError(`Session initialization: ${startErr.message}`);
         } finally {
           setQuestionLoading(false);
+=======
+        // Start interview now that hard gate passed
+        const startRes = await fetch(`${API_BASE_URL}/api/interview/start`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ application_id: applicationId }),
+        });
+        const startData = await startRes.json();
+        if (startRes.ok) {
+          setSessionId(startData.session_id);
+          setCurrentQuestionIndex(startData.current_question_index);
+          setTotalQuestions(startData.total_questions || 5);
+          if (startData.current_question) {
+            setMessages([{ sender: "AI", content: startData.current_question }]);
+            if (ttsEnabled) speakText(startData.current_question);
+          }
+>>>>>>> origin/main
         }
       } else {
         setIdentityVerified(false);
@@ -450,7 +646,10 @@ export default function StudentInterviewPage() {
       if (err instanceof Error) setError(err.message);
     } finally {
       setVerifyingIdentity(false);
+<<<<<<< HEAD
       setQuestionLoading(false);
+=======
+>>>>>>> origin/main
     }
   };
 
@@ -546,6 +745,7 @@ export default function StudentInterviewPage() {
       if (data.is_completed) {
         setIsCompleted(true);
         setFinalReport(data.final_report);
+<<<<<<< HEAD
         setCurrentQuestion("");
         if (ttsEnabledRef.current) {
           speakText("Thank you. The interview session is now complete. Your final evaluation report is ready.");
@@ -566,6 +766,24 @@ export default function StudentInterviewPage() {
           ]);
         }
         if (ttsEnabledRef.current) {
+=======
+        if (ttsEnabled) {
+          speakText("Thank you. The interview session is now complete. Your final evaluation report is ready.");
+        }
+      } else if (data.current_question) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "AI",
+            content: data.current_question,
+            turn_feedback: {
+              decision: data.agentic_action || "next_competency",
+              reasoning: data.last_turn_feedback,
+            },
+          },
+        ]);
+        if (ttsEnabled) {
+>>>>>>> origin/main
           speakText(data.current_question);
         }
       }
@@ -1056,11 +1274,16 @@ export default function StudentInterviewPage() {
           </div>
         )}
 
+<<<<<<< HEAD
         {/* Right Column: Active Question, Voice/Text Input, & Transcript */}
+=======
+        {/* Right Column: Interactive Chat Stream & Final Report */}
+>>>>>>> origin/main
         <div
           style={{
             display: "flex",
             flexDirection: "column",
+<<<<<<< HEAD
             gap: "1rem",
             minHeight: 0,
             overflowY: "auto",
@@ -1665,6 +1888,378 @@ export default function StudentInterviewPage() {
           )}
 
           <div ref={chatEndRef} />
+=======
+            backgroundColor: "#0f172a",
+            border: "1px solid #334155",
+            borderRadius: "8px",
+            overflow: "hidden",
+            minHeight: 0,
+          }}
+        >
+          {/* Scrollable Dialogue Area */}
+          <div
+            style={{
+              flex: 1,
+              padding: "1.5rem",
+              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1.25rem",
+            }}
+          >
+            {messages.map((msg, idx) => (
+              <div
+                key={idx}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: msg.sender === "CANDIDATE" ? "flex-end" : "flex-start",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+                  <span
+                    style={{
+                      fontSize: "0.75rem",
+                      color: "#64748b",
+                      marginLeft: msg.sender === "AI" ? "0.25rem" : 0,
+                      marginRight: msg.sender === "CANDIDATE" ? "0.25rem" : 0,
+                    }}
+                  >
+                    {msg.sender === "AI" ? "🤖 AI Reasoning Interviewer" : "You (Candidate)"}
+                  </span>
+
+                  {/* Read Aloud Button for AI Questions */}
+                  {msg.sender === "AI" && (
+                    <button
+                      onClick={() => speakText(msg.content)}
+                      title="Listen to question"
+                      style={{
+                        backgroundColor: "transparent",
+                        border: "none",
+                        color: "#38bdf8",
+                        cursor: "pointer",
+                        fontSize: "0.85rem",
+                        padding: "0 4px",
+                      }}
+                    >
+                      🔈
+                    </button>
+                  )}
+                </div>
+
+                <div
+                  style={{
+                    maxWidth: "85%",
+                    padding: "0.85rem 1.15rem",
+                    borderRadius:
+                      msg.sender === "CANDIDATE"
+                        ? "16px 16px 2px 16px"
+                        : "16px 16px 16px 2px",
+                    backgroundColor: msg.sender === "CANDIDATE" ? "#2563eb" : "#1e293b",
+                    color: "#f8fafc",
+                    border: msg.sender === "AI" ? "1px solid #334155" : "none",
+                    fontSize: "0.95rem",
+                    lineHeight: "1.5",
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {msg.content}
+                </div>
+
+                {/* Turn Reasoning Log Display */}
+                {msg.turn_feedback?.decision && (
+                  <div
+                    style={{
+                      marginTop: "0.35rem",
+                      backgroundColor: "#0f172a",
+                      border: "1px solid #334155",
+                      borderRadius: "6px",
+                      padding: "0.35rem 0.65rem",
+                      fontSize: "0.75rem",
+                      color: "#94a3b8",
+                      maxWidth: "85%",
+                    }}
+                  >
+                    <span
+                      style={{
+                        backgroundColor:
+                          msg.turn_feedback.decision === "broad_pivot"
+                            ? "#581c87"
+                            : msg.turn_feedback.decision === "narrow_follow_up"
+                            ? "#1e3a8a"
+                            : "#064e3b",
+                        color:
+                          msg.turn_feedback.decision === "broad_pivot"
+                            ? "#d8b4fe"
+                            : msg.turn_feedback.decision === "narrow_follow_up"
+                            ? "#93c5fd"
+                            : "#6ee7b7",
+                        padding: "1px 6px",
+                        borderRadius: "3px",
+                        fontWeight: 700,
+                        marginRight: "0.4rem",
+                      }}
+                    >
+                      {msg.turn_feedback.decision.toUpperCase().replace("_", " ")}
+                    </span>
+                    {msg.turn_feedback.reasoning}
+                  </div>
+                )}
+
+                {msg.sender === "CANDIDATE" && msg.turn_score !== undefined && (
+                  <span
+                    style={{
+                      fontSize: "0.7rem",
+                      color: msg.turn_score >= 70 ? "#34d399" : "#fbbf24",
+                      marginTop: "0.25rem",
+                      marginRight: "0.25rem",
+                    }}
+                  >
+                    Evaluated Score: {msg.turn_score}/100
+                  </span>
+                )}
+              </div>
+            ))}
+
+            {submitting && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  color: "#94a3b8",
+                  padding: "0.5rem",
+                }}
+              >
+                <div className="spinner-small" />
+                <span style={{ fontSize: "0.85rem" }}>
+                  AI panel is semantically reasoning over your answer & anti-swap check...
+                </span>
+              </div>
+            )}
+
+            {/* Final Evaluation Report Card (Stage 5 Composite Included) */}
+            {isCompleted && finalReport && (
+              <div
+                style={{
+                  backgroundColor: "#1e293b",
+                  border: `2px solid ${
+                    finalReport.recommendation === "RECOMMENDED"
+                      ? "#10b981"
+                      : finalReport.recommendation === "BORDERLINE"
+                      ? "#f59e0b"
+                      : "#ef4444"
+                  }`,
+                  borderRadius: "8px",
+                  padding: "1.5rem",
+                  marginTop: "1rem",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "1rem",
+                  }}
+                >
+                  <h3 style={{ margin: 0, color: "#f8fafc", fontSize: "1.25rem" }}>
+                    🎓 Stage 5 Final Evaluation & Recommendation
+                  </h3>
+                  <span
+                    style={{
+                      backgroundColor:
+                        finalReport.recommendation === "RECOMMENDED"
+                          ? "#065f46"
+                          : finalReport.recommendation === "BORDERLINE"
+                          ? "#78350f"
+                          : "#881337",
+                      color:
+                        finalReport.recommendation === "RECOMMENDED"
+                          ? "#34d399"
+                          : finalReport.recommendation === "BORDERLINE"
+                          ? "#fbbf24"
+                          : "#f43f5e",
+                      padding: "0.35rem 0.85rem",
+                      borderRadius: "9999px",
+                      fontSize: "0.85rem",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {finalReport.recommendation}
+                  </span>
+                </div>
+
+                {/* Stage 5 Composite Score Calculation Box */}
+                {finalReport.stage5_composite && (
+                  <div
+                    style={{
+                      backgroundColor: "#0f172a",
+                      border: "1px solid #334155",
+                      borderRadius: "6px",
+                      padding: "1rem",
+                      marginBottom: "1rem",
+                      display: "flex",
+                      justifyContent: "space-around",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: "0.75rem", color: "#94a3b8" }}>Stage 1 Resume (40%)</div>
+                      <div style={{ fontSize: "1.2rem", fontWeight: 700, color: "#38bdf8" }}>
+                        {finalReport.stage5_composite.resume_score}/100
+                      </div>
+                    </div>
+                    <div style={{ color: "#64748b", fontSize: "1.2rem" }}>+</div>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: "0.75rem", color: "#94a3b8" }}>Stage 4 Interview (60%)</div>
+                      <div style={{ fontSize: "1.2rem", fontWeight: 700, color: "#a855f7" }}>
+                        {finalReport.stage5_composite.interview_score}/100
+                      </div>
+                    </div>
+                    <div style={{ color: "#64748b", fontSize: "1.2rem" }}>=</div>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: "0.75rem", color: "#10b981", fontWeight: 700 }}>Stage 5 Composite Score</div>
+                      <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#10b981" }}>
+                        {finalReport.stage5_composite.composite_score}/100
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <p style={{ color: "#e2e8f0", fontSize: "0.9rem", lineHeight: "1.6", marginBottom: "1rem" }}>
+                  {finalReport.summary_reasoning}
+                </p>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", fontSize: "0.85rem" }}>
+                  <div>
+                    <h4 style={{ color: "#34d399", margin: "0 0 0.5rem 0" }}>Key Strengths</h4>
+                    <ul style={{ margin: 0, paddingLeft: "1.2rem", color: "#cbd5e1" }}>
+                      {finalReport.strengths?.map((s, i) => (
+                        <li key={i}>{s}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 style={{ color: "#fbbf24", margin: "0 0 0.5rem 0" }}>Areas for Improvement</h4>
+                    <ul style={{ margin: 0, paddingLeft: "1.2rem", color: "#cbd5e1" }}>
+                      {finalReport.weaknesses?.map((w, i) => (
+                        <li key={i}>{w}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: "1.5rem", borderTop: "1px solid #334155", paddingTop: "1rem" }}>
+                  <button
+                    onClick={() => router.push("/student/applications")}
+                    style={{
+                      backgroundColor: "#2563eb",
+                      color: "#ffffff",
+                      border: "none",
+                      padding: "0.5rem 1.25rem",
+                      borderRadius: "6px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    Return to My Applications
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div ref={chatEndRef} />
+          </div>
+
+          {error && (
+            <div
+              style={{
+                backgroundColor: "#881337",
+                color: "#f43f5e",
+                padding: "0.5rem 1rem",
+                fontSize: "0.85rem",
+              }}
+            >
+              {error}
+            </div>
+          )}
+
+          {/* Answer Input Bar: Voice STT + Text Fallback */}
+          {!isCompleted && (
+            <form
+              onSubmit={handleSendResponse}
+              style={{
+                backgroundColor: "#1e293b",
+                borderTop: "1px solid #334155",
+                padding: "1rem",
+                display: "flex",
+                gap: "0.75rem",
+                alignItems: "center",
+              }}
+            >
+              {/* Microphone Speech-To-Text Button */}
+              <button
+                type="button"
+                onClick={toggleVoiceRecording}
+                disabled={submitting || isCompleted}
+                style={{
+                  backgroundColor: isRecording ? "#ef4444" : "#334155",
+                  color: "#ffffff",
+                  border: `1px solid ${isRecording ? "#b91c1c" : "#475569"}`,
+                  borderRadius: "6px",
+                  padding: "0.75rem 1rem",
+                  cursor: submitting || isCompleted ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                  fontSize: "0.85rem",
+                  fontWeight: 600,
+                  transition: "all 0.2s ease",
+                }}
+              >
+                {isRecording ? "⏹ Stop Mic" : "🎙️ Speak Answer"}
+              </button>
+
+              {/* Text Input Fallback */}
+              <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder={isRecording ? "Listening to your spoken response..." : "Speak or type your answer here..."}
+                disabled={submitting || isCompleted}
+                style={{
+                  flex: 1,
+                  backgroundColor: "#0f172a",
+                  border: isRecording ? "1px solid #ef4444" : "1px solid #334155",
+                  borderRadius: "6px",
+                  padding: "0.75rem 1rem",
+                  color: "#f8fafc",
+                  fontSize: "0.95rem",
+                  outline: "none",
+                }}
+              />
+
+              <button
+                type="submit"
+                disabled={submitting || isCompleted || !inputValue.trim()}
+                style={{
+                  backgroundColor: submitting || isCompleted ? "#334155" : "#2563eb",
+                  color: "#ffffff",
+                  border: "none",
+                  borderRadius: "6px",
+                  padding: "0.75rem 1.5rem",
+                  fontWeight: 600,
+                  cursor: submitting || isCompleted ? "not-allowed" : "pointer",
+                  fontSize: "0.9rem",
+                }}
+              >
+                {submitting ? "Reasoning..." : "Submit Answer"}
+              </button>
+            </form>
+          )}
+>>>>>>> origin/main
         </div>
       </div>
     </div>

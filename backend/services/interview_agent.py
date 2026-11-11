@@ -155,8 +155,11 @@ Speak in a natural, authoritative yet encouraging voice. Return ONLY the spoken 
                 timeout=15.0,
             )
             question_text = response.choices[0].message.content.strip().replace('"', '')
+<<<<<<< HEAD
             if not question_text:
                 raise ValueError("Empty LLM response for initial question")
+=======
+>>>>>>> origin/main
         except Exception:
             question_text = (
                 f"Hello {cand_name}, welcome to your technical interview for {opening_title} in {dept}. "
@@ -185,6 +188,7 @@ Return ONLY the question text without quotes or pleasantries.
                 timeout=15.0,
             )
             question_text = response.choices[0].message.content.strip().replace('"', '')
+<<<<<<< HEAD
             if not question_text:
                 raise ValueError("Empty LLM response for competency question")
         except Exception:
@@ -193,6 +197,11 @@ Return ONLY the question text without quotes or pleasantries.
     if not question_text or not question_text.strip():
         question_text = f"Could you walk us through your technical experience with {topic['description']}?"
 
+=======
+        except Exception:
+            question_text = f"Moving to {topic['category']}: Could you explain a scenario where you had to apply {topic['description']} in a production environment?"
+
+>>>>>>> origin/main
     state["current_question"] = question_text
     state["transcript"].append({"role": "AI", "content": question_text})
     state["current_turn_count"] = state.get("current_turn_count", 0) + 1
@@ -325,7 +334,11 @@ Return ONLY a valid JSON object matching this schema:
     decision = eval_data.get("decision", "next_competency")
     trigger_phrase = eval_data.get("trigger_phrase_from_candidate", "")
     reasoning = eval_data.get("reasoning", "")
+<<<<<<< HEAD
     question_asked = (eval_data.get("question_asked") or "").strip()
+=======
+    question_asked = eval_data.get("question_asked", "")
+>>>>>>> origin/main
     emergent_competency = eval_data.get("emergent_competency")
     score = float(eval_data.get("score", 70.0))
     comp_assessed = eval_data.get("competency_assessed", current_competency)
@@ -335,6 +348,7 @@ Return ONLY a valid JSON object matching this schema:
         decision = "conclude"
         reasoning += f" (Reached maximum interview turn budget of {max_turns} turns)."
         question_asked = "Thank you for answering our questions today. That concludes our interview session."
+<<<<<<< HEAD
     elif not question_asked:
         if decision == "broad_pivot":
             question_asked = f"Regarding {emergent_competency or 'your recent comment'}: could you explain your direct contributions and technical decisions?"
@@ -342,6 +356,8 @@ Return ONLY a valid JSON object matching this schema:
             question_asked = f"Could you elaborate on the architecture, trade-offs, and failure handling behind '{trigger_phrase or current_competency}'?"
         else:
             question_asked = f"Moving forward, how would you approach the engineering challenges involved in {topic.get('description', current_competency)}?"
+=======
+>>>>>>> origin/main
 
     state["decision"] = decision
     state["agentic_action"] = decision

@@ -266,8 +266,42 @@ def start_interview_session(db: Session, request: StartInterviewRequest, current
     existing_session = db.query(InterviewSession).filter(InterviewSession.application_id == application.application_id).first()
 
     if existing_session:
+<<<<<<< HEAD
         # Fetch full message history for the existing session
         messages_db = (
+=======
+        # STRICT CONSTRAINT: If completed or terminated, do NOT restart. Return the finalized session directly.
+        if existing_session.status in [InterviewSessionStatus.COMPLETED, InterviewSessionStatus.TERMINATED_ABNORMALLY]:
+            return InterviewTurnResponse(
+                session_id=existing_session.session_id,
+                status=existing_session.status.value,
+                current_question_index=existing_session.current_question_index,
+                total_questions=existing_session.total_questions,
+                current_question=None,
+                last_turn_score=None,
+                last_turn_feedback=None,
+                is_completed=True,
+                final_report=existing_session.evaluation_report
+            )
+
+        # STAGE 3 HARD GATE: Verify identity check before resuming
+        gate_status = check_identity_gate_status(application.application_id)
+        if not gate_status["passed"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "error": "IDENTITY_HARD_GATE_BLOCKED",
+                    "message": gate_status.get("reason", "Stage 3 biometric verification is required before starting the interview."),
+                    "identity_status": gate_status["status"],
+                    "confidence": gate_status.get("confidence", 0.0),
+                    "application_id": application.application_id,
+                    "action": "ROUTE_TO_HUMAN_REVIEW" if gate_status["status"] in ["FAIL", "UNCERTAIN"] else "VERIFICATION_REQUIRED"
+                }
+            )
+
+        # Resume existing in-progress session
+        last_ai_message = (
+>>>>>>> origin/main
             db.query(InterviewMessage)
             .filter(InterviewMessage.session_id == existing_session.session_id)
             .order_by(InterviewMessage.created_at.asc())
@@ -338,11 +372,39 @@ def start_interview_session(db: Session, request: StartInterviewRequest, current
             total_questions=existing_session.total_questions,
             current_question=current_q,
             last_turn_score=last_eval_msg.turn_score if last_eval_msg else None,
+<<<<<<< HEAD
             last_turn_feedback=latest_feedback.get("feedback") if latest_feedback else None,
             agentic_action=action,
             is_completed=False,
             final_report=existing_session.evaluation_report,
             messages=messages_response
+        )
+
+    # STRICT ONE-TIME CONSTRAINT: Check if application is already COMPLETED
+    if application.status == "COMPLETED":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The interview for this application has already been concluded and cannot be retaken."
+        )
+
+    # STAGE 3 HARD GATE: Verify identity check before creating new session
+    gate_status = check_identity_gate_status(application.application_id)
+    if not gate_status["passed"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "error": "IDENTITY_HARD_GATE_BLOCKED",
+                "message": gate_status.get("reason", "Stage 3 biometric verification is required before starting the interview."),
+                "identity_status": gate_status["status"],
+                "confidence": gate_status.get("confidence", 0.0),
+                "application_id": application.application_id,
+                "action": "ROUTE_TO_HUMAN_REVIEW" if gate_status["status"] in ["FAIL", "UNCERTAIN"] else "VERIFICATION_REQUIRED"
+            }
+=======
+            last_turn_feedback=last_eval_msg.turn_feedback.get("feedback") if last_eval_msg and isinstance(last_eval_msg.turn_feedback, dict) else None,
+            is_completed=False,
+            final_report=existing_session.evaluation_report
+>>>>>>> origin/main
         )
 
     # STRICT ONE-TIME CONSTRAINT: Check if application is already COMPLETED
