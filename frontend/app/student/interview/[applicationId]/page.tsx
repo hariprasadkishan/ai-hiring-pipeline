@@ -83,6 +83,20 @@ export default function StudentInterviewPage() {
     ttsEnabledRef.current = ttsEnabled;
   }, [ttsEnabled]);
 
+  // Active Question resolution (guarantees question visibility from state or message stream)
+  const activeQuestion =
+    currentQuestion ||
+    (messages.length > 0
+      ? [...messages].reverse().find((m) => m.sender === "AI")?.content
+      : "") ||
+    "";
+
+  useEffect(() => {
+    if (!currentQuestion && activeQuestion) {
+      setCurrentQuestion(activeQuestion);
+    }
+  }, [activeQuestion, currentQuestion]);
+
   // Live Proctoring & Anti-Swap Telemetry
   const [proctoringTelemetry, setProctoringTelemetry] = useState<ProctoringTelemetry>({
     violations_count: 0,
@@ -107,9 +121,9 @@ export default function StudentInterviewPage() {
     setProctoringTelemetry(telemetry);
   }, []);
 
-  // Text-To-Speech Synthesizer
+  // Text-To-Speech Synthesizer with Chrome resilience
   const speakText = useCallback((text: string) => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    if (typeof window === "undefined" || !("speechSynthesis" in window) || !text) return;
     try {
       window.speechSynthesis.cancel();
       const cleanText = text.replace(/[*_#`]/g, "");
@@ -118,8 +132,18 @@ export default function StudentInterviewPage() {
       utterance.pitch = 1.0;
       utterance.onstart = () => setSpeaking(true);
       utterance.onend = () => setSpeaking(false);
-      utterance.onerror = () => setSpeaking(false);
-      window.speechSynthesis.speak(utterance);
+      utterance.onerror = (e) => {
+        console.warn("TTS playback warning/interrupted:", e);
+        setSpeaking(false);
+      };
+      setTimeout(() => {
+        try {
+          window.speechSynthesis.speak(utterance);
+        } catch (e) {
+          console.warn("SpeechSynthesis speak exception:", e);
+          setSpeaking(false);
+        }
+      }, 50);
     } catch (e) {
       console.error("Speech synthesis error:", e);
       setSpeaking(false);
@@ -1153,10 +1177,10 @@ export default function StudentInterviewPage() {
                   </div>
 
                   {/* TTS Listen Button */}
-                  {currentQuestion && !questionLoading && (
+                  {activeQuestion && !questionLoading && (
                     <button
                       type="button"
-                      onClick={() => speakText(currentQuestion)}
+                      onClick={() => speakText(activeQuestion)}
                       style={{
                         backgroundColor: speaking ? "#2563eb" : "#334155",
                         color: "#ffffff",
@@ -1196,7 +1220,7 @@ export default function StudentInterviewPage() {
                       Semantically deliberating over technical claims, prior answers & evaluation competencies
                     </div>
                   </div>
-                ) : currentQuestion ? (
+                ) : activeQuestion ? (
                   <div>
                     <p
                       style={{
@@ -1207,7 +1231,7 @@ export default function StudentInterviewPage() {
                         margin: "0 0 0.5rem 0",
                       }}
                     >
-                      {currentQuestion}
+                      {activeQuestion}
                     </p>
                     {latestReasoning && (
                       <div
